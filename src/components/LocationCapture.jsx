@@ -4,17 +4,9 @@ const LocationCapture = () => {
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
-  useEffect(() => {
-    const storedLocation = localStorage.getItem('user_location');
-    const storedAddress = localStorage.getItem('user_address');
-
-    if (storedLocation && storedAddress) {
-      setLocation(JSON.parse(storedLocation));
-      setAddress(storedAddress);
-      return;
-    }
-
+  const fetchLocation = () => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -35,7 +27,7 @@ const LocationCapture = () => {
             localStorage.setItem('user_address', fullAddress);
 
             // ✅ SEND TO BACKEND
-            await fetch('https://live-location-backend-fudp.onrender.com/save-location', {
+            await fetch('http://localhost:5000/save-location', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -51,11 +43,10 @@ const LocationCapture = () => {
         },
         (error) => {
           if (error.code === 1) {
-            setErrorMsg('Location access denied.');
-          } else if (error.code === 2) {
-            setErrorMsg('Location unavailable.');
+            setErrorMsg('❌ Location access denied. Please allow permission.');
+            setPermissionDenied(true);
           } else {
-            setErrorMsg('Failed to fetch location.');
+            setErrorMsg('❌ Location unavailable or failed.');
           }
         },
         {
@@ -65,7 +56,19 @@ const LocationCapture = () => {
         }
       );
     } else {
-      setErrorMsg('Geolocation is not supported by your browser.');
+      setErrorMsg('❌ Geolocation is not supported by your browser.');
+    }
+  };
+
+  useEffect(() => {
+    const storedLocation = localStorage.getItem('user_location');
+    const storedAddress = localStorage.getItem('user_address');
+
+    if (storedLocation && storedAddress) {
+      setLocation(JSON.parse(storedLocation));
+      setAddress(storedAddress);
+    } else {
+      fetchLocation();
     }
   }, []);
 
@@ -83,12 +86,10 @@ const LocationCapture = () => {
         <div>
           <p><strong>Latitude:</strong> {location.latitude}</p>
           <p><strong>Longitude:</strong> {location.longitude}</p>
-
           <p style={{ color: 'green' }}>
             <strong>📌 Address:</strong><br />
             {address}
           </p>
-
           <a
             href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
             target="_blank"
@@ -105,7 +106,6 @@ const LocationCapture = () => {
           >
             View in Google Maps
           </a>
-
           <div style={{ marginTop: 20 }}>
             <iframe
               width="100%"
@@ -117,7 +117,6 @@ const LocationCapture = () => {
               title="Google Map"
             ></iframe>
           </div>
-
           <button
             onClick={clearStorage}
             style={{
@@ -136,7 +135,21 @@ const LocationCapture = () => {
       ) : errorMsg ? (
         <div>
           <p style={{ color: 'red' }}>{errorMsg}</p>
-          <button onClick={() => window.location.reload()}>Try Again</button>
+          {permissionDenied && (
+            <button
+              onClick={fetchLocation}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#007bff',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+              }}
+            >
+              🔓 Allow Location
+            </button>
+          )}
         </div>
       ) : (
         <p>📡 Getting your live location...</p>
