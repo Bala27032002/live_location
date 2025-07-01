@@ -6,6 +6,15 @@ const LocationCapture = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    const storedLocation = localStorage.getItem('user_location');
+    const storedAddress = localStorage.getItem('user_address');
+
+    if (storedLocation && storedAddress) {
+      setLocation(JSON.parse(storedLocation));
+      setAddress(storedAddress);
+      return;
+    }
+
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -16,12 +25,29 @@ const LocationCapture = () => {
           setLocation(coords);
           localStorage.setItem('user_location', JSON.stringify(coords));
 
-          // Fetch readable address using reverse geocoding (OpenStreetMap)
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`
-          );
-          const data = await response.json();
-          setAddress(data.display_name || 'Address not found');
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`
+            );
+            const data = await response.json();
+            const fullAddress = data.display_name || 'Address not found';
+            setAddress(fullAddress);
+            localStorage.setItem('user_address', fullAddress);
+
+            // ✅ SEND TO BACKEND
+            await fetch('https://live-location-backend-fudp.onrender.com/save-location', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                address: fullAddress,
+                mobile: '9876543210',
+              }),
+            });
+          } catch (err) {
+            console.error('Error sending location:', err);
+          }
         },
         (error) => {
           if (error.code === 1) {
@@ -43,7 +69,11 @@ const LocationCapture = () => {
     }
   }, []);
 
-  const reload = () => window.location.reload();
+  const clearStorage = () => {
+    localStorage.removeItem('user_location');
+    localStorage.removeItem('user_address');
+    window.location.reload();
+  };
 
   return (
     <div style={{ padding: 20, fontFamily: 'Arial' }}>
@@ -87,11 +117,26 @@ const LocationCapture = () => {
               title="Google Map"
             ></iframe>
           </div>
+
+          <button
+            onClick={clearStorage}
+            style={{
+              marginTop: 20,
+              backgroundColor: '#dc3545',
+              color: '#fff',
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            Clear Location & Refresh
+          </button>
         </div>
       ) : errorMsg ? (
         <div>
           <p style={{ color: 'red' }}>{errorMsg}</p>
-          <button onClick={reload}>Try Again</button>
+          <button onClick={() => window.location.reload()}>Try Again</button>
         </div>
       ) : (
         <p>📡 Getting your live location...</p>
