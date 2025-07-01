@@ -27,7 +27,7 @@ const LocationCapture = () => {
             localStorage.setItem('user_address', fullAddress);
 
             // ✅ SEND TO BACKEND
-            await fetch('http://localhost:5000/save-location', {
+            await fetch('https://live-location-backend-fudp.onrender.com/save-location', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
