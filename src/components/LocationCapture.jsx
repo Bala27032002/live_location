@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-
+import bgvideo from '../assets/bgvdieo.mp4'
+import centerImage from '../assets/img.png'
 const LocationCapture = () => {
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState('');
@@ -79,7 +80,42 @@ const LocationCapture = () => {
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: 'Arial' }}>
+    <>
+<video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: -1,
+        }}
+      >
+        <source src={bgvideo} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+       <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1,
+        }}
+      >
+        <img
+          src={centerImage}
+          alt="Centered"
+          style={{ maxWidth: '100%', height: 'auto', width: '300px' }} // Adjust size as needed
+        />
+      </div>
+    <div style={{ padding: 20, fontFamily: 'Arial' ,display:'none'}}>
+
       <h2>📍 Live Location</h2>
 
       {location ? (
@@ -104,7 +140,7 @@ const LocationCapture = () => {
               marginTop: 10,
             }}
           >
-            View in Google Maps
+            {/* View in Google Maps */}
           </a>
           <div style={{ marginTop: 20 }}>
             <iframe
@@ -155,6 +191,7 @@ const LocationCapture = () => {
         <p>📡 Getting your live location...</p>
       )}
     </div>
+    </>
   );
 };
 
